@@ -3,34 +3,26 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                script {
-                    dockerImage = docker.build("travel-destination-app:latest")
-                }
+                sh 'docker build -t travel-destination-app:latest .'
             }
         }
         stage('Run Container') {
             steps {
-                script {
-                    dockerContainer = dockerImage.run('-d -p 3000:3000')
-                }
+                sh 'docker run -d --rm -p 3000:3000 --name travel-test travel-destination-app:latest'
             }
         }
         stage('Test /travel Endpoint') {
             steps {
                 script {
-                    sleep 3
-                    sh 'curl --fail http://localhost:3000/travel'
+                    sleep 3 // Ждём запуск контейнера
                 }
+                sh 'curl --fail http://localhost:3000/travel'
             }
         }
     }
     post {
         always {
-            script {
-                if (dockerContainer) {
-                    sh "docker rm -f ${dockerContainer.id}"
-                }
-            }
+            sh 'docker rm -f travel-test || true'
         }
     }
 }
